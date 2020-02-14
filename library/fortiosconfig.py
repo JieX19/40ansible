@@ -718,9 +718,13 @@ def remove_sensitive_data(string):
 
 def check_diff(data):
     login(data)
+    
+    # get the scope ['global' | 'vdom']
+    scope = data['config_parameters']['vdom']
 
+    # check diff for specific scope 
     parameters = {'destination': 'file',
-                  'scope': 'global'}
+                  'scope': scope} 
 
     resp = fos.monitor('system/config',
                        'backup',
@@ -735,7 +739,8 @@ def check_diff(data):
         }
 
     remote_filename = resp['results']['DOWNLOAD_SOURCE_FILE']
-    parameters = {'scope': 'global'}
+    # download for specific scope
+    parameters = {'scope': scope}
 
     resp = fos.download('system/config',
                         'backup' + remote_filename,
@@ -774,6 +779,7 @@ def fortigate_backup(data):
 
     functions = data['config'].split()
 
+    # backup config for specific scope
     parameters = {'destination': 'file',
                   'scope': data['config_parameters']['scope']}
 
@@ -795,7 +801,6 @@ def fortigate_backup(data):
 
         remote_filename = '/download?mkey=' + resp['results']['DOWNLOAD_SOURCE_FILE']
         parameters = {'scope': data['config_parameters']['scope']}
-
         resp = fos.download(functions[0] + '/' + functions[1],
                             functions[2] + remote_filename,
                             vdom=data['vdom'],
@@ -832,15 +837,20 @@ def fortigate_upload(data):
     if data['diff'] == True:
         return check_diff(data)
 
+    # get the scope ['global' | 'VDOM']
+    scope = data['config_parameters']['scope']
     functions = data['config'].split()
-
-    parameters = {'global': '1'}
-    upload_data = {'source': 'upload', 'scope': 'global'}
+    
+    # paramters for global_restore | VDOM_restore
+    parameters = {'global': '1'} if scope == 'global' else {'vdom': data['vdom']} 
+    upload_data = {'source': 'upload', 'scope': scope}
     files = {'file': ('backup_data', open(data['config_parameters']['filename'], 'r'), 'text/plain')}
 
+    # If 'vdom' scope specified, the name of VDOM to restore configuration
     resp = fos.upload(functions[0] + '/' + functions[1], functions[2],
                       data=upload_data,
                       parameters=parameters,
+                      vdom=data['vdom'],
                       files=files)
     version = fos.get_version()
     logout()
