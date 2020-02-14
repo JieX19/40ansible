@@ -830,7 +830,7 @@ def fortigate_backup(data):
         'backup': backup_content
     }
 
-
+# Make sure the specific VDOM exists in the fortigate. Using fortios_system_vdom module to creat a VDOM before restoring it.
 def fortigate_upload(data):
     login(data)
 
